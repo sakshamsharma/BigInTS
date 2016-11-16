@@ -1,3 +1,5 @@
+import {sign} from './utils';
+
 export class Chunk {
     static size: number = 7;
     static max: number = Math.pow(10, Chunk.size);
@@ -38,6 +40,10 @@ export class Chunk {
         let returnCarry = Math.floor(result / Chunk.max);
         result %= Chunk.max;
         return [result, returnCarry];
+    }
+
+    static compare(c1: Chunk, c2: Chunk): number {
+        return sign(c1._bits-c2._bits);
     }
 
     // Mods the complete chunk over @modNum

@@ -14,3 +14,6 @@ console.log('b3: ' + b3.toString('-'));
 b3.multiply(b1, b2);
 console.log('multed b2');
 console.log(b3.toString(''));
+
+console.log(BigInteger.compare(new BigInteger('123456789'),
+                               new BigInteger('123456769')));

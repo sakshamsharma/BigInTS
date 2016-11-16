@@ -107,4 +107,22 @@ export class BigInteger {
             }
         }
     }
+
+    /* Takes two BigInts, and compares them.
+     * Returns 1 if n1>n2, -1 if n2>n1, 0 if n1==n2
+     * @n1: BigInteger First number
+     * @n2: BigInteger Second number
+     */
+    static compare(n1: BigInteger, n2: BigInteger): number {
+        if (n1._chunkCnt > n2._chunkCnt) return 1;
+        else if (n1._chunkCnt < n2._chunkCnt) return -1;
+
+        for (let i=n1._chunkCnt-1; i>=0; i--) {
+            let res = Chunk.compare(n1._repr[i], n2._repr[i]);
+            if (res != 0) {
+                return res;
+            }
+        }
+        return 0;
+    }
 }

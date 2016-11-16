@@ -13,3 +13,5 @@ export function numDigits(x) {
 export function reverseStr(str: string) {
     return str.split('').reverse().join('');
 }
+
+export function sign(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
