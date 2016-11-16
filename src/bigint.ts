@@ -1,17 +1,10 @@
+import * as Utils from './utils';
 import {Chunk} from './chunk';
 
-function isNumber(x: any): x is number {
-    return typeof x === "number";
-}
-
-function isString(x: any): x is string {
-    return typeof x === "string";
-}
-
-function numDigits(x) {
-    return ((Math.log(((x ^ (x >> 31)) - (x >> 31)) | 0) + 1) * Math.LOG10E);
-}
-
+/* Provides common big integer functions for use in JS
+ * @val: string | number Requires a number or a string
+ *                       to initialize the integer
+ */
 export class BigInteger {
     _repr: Chunk[];
     _chunkCnt: number;
@@ -20,14 +13,14 @@ export class BigInteger {
         this._repr = [];
         this._chunkCnt = 0;
 
-        if (isNumber(val) || isString(val)) {
+        if (Utils.isNumber(val) || Utils.isString(val)) {
             // Create a new bigint from this
 
             let strVal: string;
-            if (isNumber(val)) {
-                strVal = val.toString().split('').reverse().join('');
+            if (Utils.isNumber(val)) {
+                strVal = Utils.reverseStr(val.toString());
             } else {
-                strVal = val.split('').reverse().join('');
+                strVal = Utils.reverseStr(val);
             }
 
             let length = strVal.length;
@@ -56,7 +49,7 @@ export class BigInteger {
      * @val: number | string Value (len<10) to be added to chunk
      */
     addChunk(val: number | string) {
-        if (isNumber(val)) {
+        if (Utils.isNumber(val)) {
             this._repr.push(new Chunk((Math.floor(val)).toString()));
         } else {
             this._repr.push(new Chunk(val));
@@ -72,6 +65,9 @@ export class BigInteger {
         return this._repr[index].add(value, carry)
     }
 
+    /* Adds a big integer to this integer
+     * @b2: BigInteger The number to be added to this
+     */
     add(b2: BigInteger) {
         let lastCarry = 0;
         for (let i=0; i<b2._chunkCnt; i++) {
@@ -85,7 +81,10 @@ export class BigInteger {
         }
     }
 
-    // Stores product of n1, n2 in itself
+    /* Stores product of n1, n2 in itself
+     * @n1: BigInteger The first number in the product
+     * @n2: BigInteger Second number in the product
+     */
     multiply(n1: BigInteger,
              n2: BigInteger) {
 

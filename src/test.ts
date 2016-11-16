@@ -1,10 +1,6 @@
-import {RsaPrivate} from './rsapriv';
 import {BigInteger} from './bigint';
 
-let privateKey = new RsaPrivate();
 let bigint = new BigInteger('345678901234567');
-
-console.log(privateKey.toString());
 
 console.log(bigint.toString('-'));
 
