@@ -114,6 +114,7 @@ export class BigInteger {
             for (let j=0; j<n1._chunkCnt; j++) {
                 let [res, rcar] =
                     Chunk.multiply(n1._repr[j], plier);
+
                 this._addToChunk(j+i, res, 0);
 
                 let addingTo = j+i+1;
@@ -123,6 +124,47 @@ export class BigInteger {
                 }
             }
         }
+    }
+
+    static multiply(b1: BigInteger, b2: BigInteger): BigInteger {
+        let result = new BigInteger([0, []]);
+        result.multiply(b1, b2);
+        return result;
+    }
+
+    static exponent(n: BigInteger, power: BigInteger): BigInteger {
+        if (power.toString() === '0') {
+            return new BigInteger('1');
+        } else if (power.toString() === '1') {
+            return new BigInteger(n);
+        } else if (power.toString() === '2') {
+            return BigInteger.multiply(n, n);
+        }
+
+        let toRaise = BigInteger.halve(power);
+        let b1 = BigInteger.exponent(n, toRaise);
+
+        let result = BigInteger.multiply(b1, b1);
+
+        if (BigInteger.mod2(power) == 1) {
+            result = BigInteger.multiply(result, n);
+        }
+
+        return result;
+    }
+
+    static halve(n: BigInteger) {
+        let result = new BigInteger([0, []]);
+        let lastCarry = 0;
+        let lastRes;
+        for (let i=n._chunkCnt-1; i>=0; i--) {
+            [lastRes, lastCarry] = Chunk.halve(n._repr[i], lastCarry);
+            if (lastRes == 0 && i == n._chunkCnt-1) {
+                continue;
+            }
+            result._addToChunk(i, lastRes, 0);
+        }
+        return result;
     }
 
     /* Takes two BigInts, and compares them.

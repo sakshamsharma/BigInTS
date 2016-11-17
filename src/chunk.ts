@@ -42,6 +42,13 @@ export class Chunk {
         return [result, returnCarry];
     }
 
+    static halve(ch: Chunk, car: number): [number, number] {
+        let val = ch._bits + Chunk.max * car;
+        let res = Math.floor(val / 2);
+        let rcar = Math.round(val % 2);
+        return [res, rcar];
+    }
+
     static compare(c1: Chunk, c2: Chunk): number {
         return sign(c1._bits-c2._bits);
     }
