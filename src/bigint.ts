@@ -14,22 +14,24 @@ export class BigInt {
         this._chunks = [];
         this._cntChunk = 0;
 
-        if ((Utils.isNumber(val) || Utils.isString(val))) {
+        if (Utils.isString(val)) {
             // Create a new bigint from this
 
-            let strVal: string;
-            if (Utils.isNumber(val)) {
-                strVal = Utils.reverseStr(val.toString());
-            } else {
-                strVal = Utils.reverseStr(val);
-            }
+            let strVal = Utils.reverseStr(val);
 
             let length = strVal.length;
             for (let i=0; i<length; i+=Chunk.size) {
-                this.addChunk(
-                    (strVal.substr(i, Chunk.size)).split('').reverse().join(''));
+                this._chunks.push(parseInt(
+                    (strVal.substr(i, Chunk.size)).split('').reverse().join('')));
+                this._cntChunk += 1;
             }
-
+        } else if (Utils.isNumber(val)) {
+            if (val < Chunk.max) {
+                this._cntChunk = 1;
+                this._chunks = [val];
+            } else {
+                throw new Error(val.toString() + ': Too large an initializer');
+            }
         } else if (val instanceof BigInt) {
             this._chunks = val._chunks.slice(); // Copy it, not refer
             this._cntChunk = val._cntChunk;
@@ -54,23 +56,10 @@ export class BigInt {
         return retval;
     }
 
-    /* Adds a new chunk of value val to the bigint
-     * Warning, very horryfing behavarior with 0 passed as int
-     * Prefer to use string.
-     * @val: number | string Value (len<10) to be added to chunk
-     */
-    addChunk(val: number | string) {
-        if (Utils.isNumber(val)) {
-            this._chunks.push(Math.floor(val));
-        } else {
-            this._chunks.push(parseInt(val));
-        }
-        this._cntChunk += 1;
-    }
-
     private _addToChunk(index: number, value: number, carry: number) {
         while (index >= this._cntChunk) {
-            this.addChunk(0);
+            this._chunks.push(0);
+            this._cntChunk += 1;
         }
 
         let rcar: number;
@@ -167,10 +156,6 @@ export class BigInt {
         return result;
     }
 
-    static powTen(count: number): number[] {
-        return Array.apply(null, Array(count)).map(function(){return 0});
-    }
-
     static slowmultiply(b1: BigInt, b2: BigInt): BigInt {
         let result = new BigInt([0, []]);
         result.multiply(b1, b2);
@@ -179,7 +164,6 @@ export class BigInt {
 
     static karatsuba(num1: BigInt, num2: BigInt): BigInt {
         // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
-
         if (num1._cntChunk <= 30 || num2._cntChunk <= 30) {
             return (BigInt.slowmultiply(num1, num2));
         }
@@ -196,21 +180,22 @@ export class BigInt {
 
         // (z2*10^(2*m2))+((z1-z2-z0)*10^(m2))+(z0)
         return BigInt.add(
-            z0,
-            BigInt.add(
-                BigInt.shiftChunks(z2, 2*m),
-                BigInt.shiftChunks(
-                    BigInt.subtract(z1, BigInt.add(z2, z0)), m)
-            )
+            BigInt.shiftChunks(
+                BigInt.add(
+                    BigInt.shiftChunks(z2, m),
+                    BigInt.subtract(z1, BigInt.add(z2, z0))
+                ), m
+            ), z0
         );
     }
 
     static exponent(n: BigInt, power: BigInt): BigInt {
-        if (power.toString() === '0') {
+        let powerStr = power.toString(); // Readability :)
+        if (powerStr === '0') {
             return new BigInt(1);
-        } else if (power.toString() === '1') {
+        } else if (powerStr === '1') {
             return new BigInt(n);
-        } else if (power.toString() === '2') {
+        } else if (powerStr === '2') {
             return BigInt.karatsuba(n, n);
         }
 
@@ -218,7 +203,7 @@ export class BigInt {
         let b2 = BigInt.karatsuba(b1, b1);
 
         if (BigInt.mod2(power) == 1) {
-            return BigInt.slowmultiply(b2, n);
+            return BigInt.karatsuba(b2, n);
         } else {
             return b2;
         }
@@ -276,6 +261,10 @@ export class BigInt {
                                 item._chunks.slice(0, countInOne)]);
 
         return [h, l];
+    }
+
+    static powTen(count: number): number[] {
+        return Array.apply(null, Array(count)).map(x => 0);
     }
 
     static shiftChunks(item: BigInt, count: number) {
