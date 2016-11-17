@@ -31,6 +31,7 @@ export class BigInteger {
             }
 
         } else if (val instanceof BigInteger) {
+            // BUG: Does not copy even now
             this._repr = val._repr.slice(); // Copy it, not refer
             this._chunkCnt = val._chunkCnt;
         } else if (val instanceof Array) {
@@ -82,10 +83,10 @@ export class BigInteger {
                     new BigInteger('0')];
         }
 
-        let h = new BigInteger([countInOne,
-                                this._repr.slice(0, countInOne)]);
-        let l = new BigInteger([this._chunkCnt - countInOne,
+        let h = new BigInteger([this._chunkCnt - countInOne,
                                 this._repr.slice(countInOne)]);
+        let l = new BigInteger([countInOne,
+                                this._repr.slice(0, countInOne)]);
 
         return [h, l];
     }
@@ -107,11 +108,26 @@ export class BigInteger {
     }
 
     subtract(b2: BigInteger) {
-        console.error('Subtract not yet implemented');
+        if (BigInteger.compare(this, b2) == -1) {
+            throw new Error('Subtract big from small not implemented');
+        }
+
+        let lastCarry = 0;
+        for (let i=0; i<b2._chunkCnt; i++) {
+            lastCarry = this._repr[i].subtract(b2._repr[i]._bits, lastCarry);
+        }
+        if (lastCarry != 0) {
+            throw new Error('Carry left: ' + lastCarry);
+        }
+        while (this._repr[this._chunkCnt-1]._bits == 0) {
+            this._repr.pop();
+            this._chunkCnt--;
+        }
     }
 
     static add(b1: BigInteger, b2: BigInteger): BigInteger {
-        let result = new BigInteger(b1);
+        let result = new BigInteger('0');
+        result.add(b1);
         result.add(b2);
         return result;
     }
@@ -156,8 +172,13 @@ export class BigInteger {
         return result;
     }
 
+    static cnt = 0;
+
     static karatsuba(num1: BigInteger, num2: BigInteger): BigInteger {
         // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
+
+        let kk = BigInteger.cnt;
+        BigInteger.cnt ++;
 
         if (num1._chunkCnt <= 2 || num2._chunkCnt <= 2) {
             return (BigInteger.multiply(num1, num2));
@@ -204,9 +225,9 @@ export class BigInteger {
         let b1 = BigInteger.exponent(n, BigInteger.halve(power));
 
         if (BigInteger.mod2(power) == 1) {
-            return BigInteger.multiply(b1, BigInteger.multiply(b1, n));
+            return BigInteger.karatsuba(b1, BigInteger.karatsuba(b1, n));
         } else {
-            return BigInteger.multiply(b1, b1);
+            return BigInteger.karatsuba(b1, b1);
         }
     }
 

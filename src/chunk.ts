@@ -26,6 +26,16 @@ export class Chunk {
         return returnCarry;
     }
 
+    subtract(value: number, carry: number): number {
+        this._bits -= (value + carry);
+        let rcar = 0;
+        if (this._bits < 0) {
+            rcar = 1;
+            this._bits += Chunk.max;
+        }
+        return rcar;
+    }
+
     multiply(c2: Chunk): number {
         this._bits *= c2._bits;
 
