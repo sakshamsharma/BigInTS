@@ -113,15 +113,23 @@ export class BigInteger {
         }
 
         let lastCarry = 0;
-        for (let i=0; i<b2._chunkCnt; i++) {
+        let i = 0;
+        for (i=0; i<b2._chunkCnt; i++) {
             lastCarry = this._repr[i].subtract(b2._repr[i]._bits, lastCarry);
+
         }
-        if (lastCarry != 0) {
-            throw new Error('Carry left: ' + lastCarry);
+        while (lastCarry != 0) {
+            lastCarry = this._repr[i].subtract(0, lastCarry);
+            i++;
         }
+
         while (this._repr[this._chunkCnt-1]._bits == 0) {
             this._repr.pop();
             this._chunkCnt--;
+
+            if (this._chunkCnt == 0) {
+                break;
+            }
         }
     }
 
@@ -180,7 +188,7 @@ export class BigInteger {
         let kk = BigInteger.cnt;
         BigInteger.cnt ++;
 
-        if (num1._chunkCnt <= 2 || num2._chunkCnt <= 2) {
+        if (num1._chunkCnt <= 500 || num2._chunkCnt <= 500) {
             return (BigInteger.multiply(num1, num2));
         }
 
@@ -219,15 +227,17 @@ export class BigInteger {
         } else if (power.toString() === '1') {
             return new BigInteger(n);
         } else if (power.toString() === '2') {
-            return BigInteger.multiply(n, n);
+            return BigInteger.karatsuba(n, n);
         }
 
-        let b1 = BigInteger.exponent(n, BigInteger.halve(power));
+        let toRaise = BigInteger.halve(power);
+        let b1 = BigInteger.exponent(n, toRaise);
+        let b2 = BigInteger.karatsuba(b1, b1);
 
         if (BigInteger.mod2(power) == 1) {
-            return BigInteger.karatsuba(b1, BigInteger.karatsuba(b1, n));
+            return BigInteger.karatsuba(b2, n);
         } else {
-            return BigInteger.karatsuba(b1, b1);
+            return b2
         }
     }
 
