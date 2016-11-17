@@ -91,6 +91,13 @@ export class BigInteger {
         return [h, l];
     }
 
+    shiftChunks(count: number) {
+        let result = new BigInteger(this);
+        result._repr = BigInteger.powTen(count).concat(this._repr);
+        result._chunkCnt += count;
+        return result;
+    }
+
     /* Adds a big integer to this integer
      * @b2: BigInteger The number to be added to this
      */
@@ -183,7 +190,7 @@ export class BigInteger {
     static karatsuba(num1: BigInteger, num2: BigInteger): BigInteger {
         // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
 
-        if (num1._chunkCnt <= 1000 || num2._chunkCnt <= 1000) {
+        if (num1._chunkCnt <= 30 || num2._chunkCnt <= 30) {
             return (BigInteger.multiply(num1, num2));
         }
 
@@ -196,17 +203,18 @@ export class BigInteger {
         let z1 = BigInteger.karatsuba(BigInteger.add(l1, h1), BigInteger.add(l2, h2));
         let z2 = BigInteger.karatsuba(h1, h2);
 
-        let tenToM = BigInteger.exponent(new BigInteger(Chunk.max), new BigInteger(m));
-        let tenToTwoM = BigInteger.exponent(tenToM, new BigInteger('2'));
-
         // (z2*10^(2*m2))+((z1-z2-z0)*10^(m2))+(z0)
         return BigInteger.add(
             z0,
             BigInteger.add(
-                BigInteger.multiply(z2, tenToTwoM),
-                BigInteger.multiply(BigInteger.subtract(z1, BigInteger.add(z2, z0)), tenToM)
+                z2.shiftChunks(2*m),
+                BigInteger.subtract(z1, BigInteger.add(z2, z0)).shiftChunks(m)
             )
         );
+    }
+
+    static powTen(count: number): Chunk[] {
+        return Array.apply(null, Array(count)).map(function(){return new Chunk('0')});
     }
 
     static exponent(n: BigInteger, power: BigInteger): BigInteger {
@@ -218,14 +226,13 @@ export class BigInteger {
             return BigInteger.karatsuba(n, n);
         }
 
-        let toRaise = BigInteger.halve(power);
-        let b1 = BigInteger.exponent(n, toRaise);
+        let b1 = BigInteger.exponent(n, BigInteger.halve(power));
         let b2 = BigInteger.karatsuba(b1, b1);
 
         if (BigInteger.mod2(power) == 1) {
-            return BigInteger.karatsuba(b2, n);
+            return BigInteger.multiply(b2, n);
         } else {
-            return b2
+            return b2;
         }
     }
 
