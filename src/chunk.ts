@@ -15,10 +15,6 @@ export class Chunk {
         }
     }
 
-    set(val: number) {
-        this._bits = val;
-    }
-
     add(value: number, carry: number) {
         this._bits += (value + carry);
         let returnCarry = Math.floor(this._bits / Chunk.max);
@@ -34,15 +30,6 @@ export class Chunk {
             this._bits += Chunk.max;
         }
         return rcar;
-    }
-
-    multiply(c2: Chunk): number {
-        this._bits *= c2._bits;
-
-        let returnCarry = Math.floor(this._bits / Chunk.max);
-        this._bits %= Chunk.max;
-
-        return returnCarry;
     }
 
     static multiply(c1: Chunk, c2: Chunk): [number, number] {
@@ -61,11 +48,6 @@ export class Chunk {
 
     static compare(c1: Chunk, c2: Chunk): number {
         return sign(c1._bits-c2._bits);
-    }
-
-    // Mods the complete chunk over @modNum
-    mod(modNum: number) {
-        this._bits %= modNum;
     }
 
     toString(): string {
