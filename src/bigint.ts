@@ -115,7 +115,7 @@ export class BigInteger {
                 let [res, rcar] =
                     Chunk.multiply(n1._repr[j], plier);
 
-                this._addToChunk(j+i, res, 0);
+                rcar += this._addToChunk(j+i, res, 0);
 
                 let addingTo = j+i+1;
                 while (rcar !== 0) {

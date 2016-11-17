@@ -21,4 +21,4 @@ console.log(BigInteger.compare(new BigInteger('123456789'),
 
 console.log(BigInteger.halve(b2).toString());
 console.log(BigInteger.exponent(
-    new BigInteger('19956534'), new BigInteger('2')).toString('-'));
+    new BigInteger('19956534'), new BigInteger('1010')).toString());
