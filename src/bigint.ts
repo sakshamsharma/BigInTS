@@ -92,6 +92,12 @@ export class BigInteger {
         }
     }
 
+    static add(b1: BigInteger, b2: BigInteger): BigInteger {
+        let result = new BigInteger(b1);
+        result.add(b2);
+        return result;
+    }
+
     /* Stores product of n1, n2 in itself
      * @n1: BigInteger The first number in the product
      * @n2: BigInteger Second number in the product
@@ -135,5 +141,12 @@ export class BigInteger {
             }
         }
         return 0;
+    }
+
+    static mod2(n: BigInteger): number {
+        if (n._chunkCnt == 0) {
+            throw new Error('Modulo of empty BigInteger');
+        }
+        return Math.floor(n._repr[0]._bits % 2);
     }
 }
