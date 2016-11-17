@@ -168,7 +168,7 @@ export class BigInteger {
         return Array.apply(null, Array(count)).map(function(){return new Chunk('0')});
     }
 
-    static multiply(b1: BigInteger, b2: BigInteger): BigInteger {
+    static slowmultiply(b1: BigInteger, b2: BigInteger): BigInteger {
         let result = new BigInteger([0, []]);
         result.multiply(b1, b2);
         return result;
@@ -178,7 +178,7 @@ export class BigInteger {
         // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
 
         if (num1._chunkCnt <= 30 || num2._chunkCnt <= 30) {
-            return (BigInteger.multiply(num1, num2));
+            return (BigInteger.slowmultiply(num1, num2));
         }
 
         let m = Math.round(Math.max(num1._chunkCnt, num2._chunkCnt)/2);
@@ -213,7 +213,7 @@ export class BigInteger {
         let b2 = BigInteger.karatsuba(b1, b1);
 
         if (BigInteger.mod2(power) == 1) {
-            return BigInteger.multiply(b2, n);
+            return BigInteger.slowmultiply(b2, n);
         } else {
             return b2;
         }
