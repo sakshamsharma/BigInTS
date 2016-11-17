@@ -3,7 +3,7 @@ BigInTS
 
 As the name says, this library is meant to serve as a clean (and easy-to-use ?) BigInteger implementation written completely in TypeScript. This gives you the benefits of compiling your code to ES3, ES5, whichever one you choose, among other things.
 
-The code is well typed, and small (4KB without minification). There is still scope for performance improvements (see the performance section).
+The code is well typed, and small (4KB without minification). There is some major scope for performance improvements (see the performance section).
 
 ### Currently implemented functionality:
 
@@ -20,16 +20,15 @@ The code is well typed, and small (4KB without minification). There is still sco
 * [2]: Karatsuba is a much faster implementation of multiplication, and automatically falls back to normal multiplication for small values. It is the recommended way for multiplication. Refer to [WikiPedia](https://en.wikipedia.org/wiki/Karatsuba_algorithm) for the description.
 
 ### Performance:
-The performance is *bearable*. Python, written in a much lower level, of course works faster. But regardless, the test used is:
+The performance is *bearable* (well, not). Python, of course, works much faster. But regardless, the test used is:
 
 ```
-console.log(BigInteger.exponent(
-    new BigInteger('19956534'), new BigInteger('10101')).toString());
+BigInteger.exponent(new BigInteger('19956534'), new BigInteger('10101'));
 ```
 
 Time taken:
-* Python: Approx 100ms
-* BigInTS: Approx 1100ms
+* Python: Less than a microsecond
+* BigInTS: Approx 1000ms
 
 Expect comparisions with other JS libraries in the near future.
 
