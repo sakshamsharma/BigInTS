@@ -2,17 +2,17 @@ import * as Utils from './utils';
 import {Chunk} from './chunk';
 
 /* Provides common big integer functions for use in JS
- * @val: string | number | BigInteger | [number, Chunk[]]
- * Requires a number, string, BigInteger, or a list of chunks
+ * @val: string | number | BigInt | [number, Chunk[]]
+ * Requires a number, string, BigInt, or a list of chunks
  * to initialize the integer
  */
-export class BigInteger {
-    _repr: Chunk[];
-    _chunkCnt: number;
+export class BigInt {
+    _chunks: number[];
+    _cntChunk: number;
 
-    constructor (val: string | number | BigInteger | [number, Chunk[]]) {
-        this._repr = [];
-        this._chunkCnt = 0;
+    constructor (val: string | number | BigInt | [number, number[]]) {
+        this._chunks = [];
+        this._cntChunk = 0;
 
         if ((Utils.isNumber(val) || Utils.isString(val))) {
             // Create a new bigint from this
@@ -30,15 +30,14 @@ export class BigInteger {
                     (strVal.substr(i, Chunk.size)).split('').reverse().join(''));
             }
 
-        } else if (val instanceof BigInteger) {
-            // BUG: Does not copy even now
-            this._repr = val._repr.slice(); // Copy it, not refer
-            this._chunkCnt = val._chunkCnt;
+        } else if (val instanceof BigInt) {
+            this._chunks = val._chunks.slice(); // Copy it, not refer
+            this._cntChunk = val._cntChunk;
         } else if (val instanceof Array) {
-            this._repr = val[1].slice();
-            this._chunkCnt = val[0];
+            this._chunks = val[1].slice();
+            this._cntChunk = val[0];
         } else {
-            throw new TypeError('Bad type for BigInteger constructor');
+            throw new TypeError('Bad type for BigInt constructor');
         }
     }
 
@@ -46,12 +45,12 @@ export class BigInteger {
      * @delimiter: string? Optional delimiter to print between chunks
      */
     toString(delimiter: string = ''): string {
-        let retval = this._repr.reverse().
-            map(x => x.toString()).join(delimiter).replace(/^0+/, '');;
+        let retval = this._chunks.reverse().
+            map(x => Chunk.toString(x)).join(delimiter).replace(/^0+/, '');;
         if (retval == '') {
             retval = '0';
         }
-        this._repr.reverse();
+        this._chunks.reverse();
         return retval;
     }
 
@@ -62,31 +61,34 @@ export class BigInteger {
      */
     addChunk(val: number | string) {
         if (Utils.isNumber(val)) {
-            this._repr.push(new Chunk((Math.floor(val)).toString()));
+            this._chunks.push(Math.floor(val));
         } else {
-            this._repr.push(new Chunk(val));
+            this._chunks.push(parseInt(val));
         }
-        this._chunkCnt += 1;
+        this._cntChunk += 1;
     }
 
     private _addToChunk(index: number, value: number, carry: number) {
-        while (index >= this._chunkCnt) {
-            this.addChunk('0');
+        while (index >= this._cntChunk) {
+            this.addChunk(0);
         }
 
-        return this._repr[index].add(value, carry)
+        let rcar: number;
+        [this._chunks[index], rcar] =
+            Chunk.add(this._chunks[index], value, carry);
+        return rcar;
     }
 
     /* Adds a big integer to this integer
-     * @b2: BigInteger The number to be added to this
+     * @b2: BigInt The number to be added to this
      */
-    add(b2: BigInteger) {
+    add(b2: BigInt) {
         let lastCarry = 0;
-        for (let i=0; i<b2._chunkCnt; i++) {
-            lastCarry = this._addToChunk(i, b2._repr[i]._bits, lastCarry);
+        for (let i=0; i<b2._cntChunk; i++) {
+            lastCarry = this._addToChunk(i, b2._chunks[i], lastCarry);
         }
 
-        let addingTo = b2._chunkCnt;
+        let addingTo = b2._cntChunk;
         while (lastCarry !== 0) {
             lastCarry = this._addToChunk(addingTo, 0, lastCarry);
             addingTo++;
@@ -95,50 +97,52 @@ export class BigInteger {
 
     /* Subtracts a big integer from this integer
      * NOTE: Does not handle cases where result is negative
-     * @b2: BigInteger The number to be subtracted
+     * @b2: BigInt The number to be subtracted
      */
-    subtract(b2: BigInteger) {
-        if (BigInteger.compare(this, b2) == -1) {
+    subtract(b2: BigInt) {
+        if (BigInt.compare(this, b2) == -1) {
             throw new Error('Subtract big from small not implemented');
         }
 
         let lastCarry = 0;
         let i = 0;
-        for (i=0; i<b2._chunkCnt; i++) {
-            lastCarry = this._repr[i].subtract(b2._repr[i]._bits, lastCarry);
+        for (i=0; i<b2._cntChunk; i++) {
+            [this._chunks[i], lastCarry] =
+                Chunk.subtract(this._chunks[i], b2._chunks[i], lastCarry);
         }
 
         while (lastCarry != 0) {
-            lastCarry = this._repr[i].subtract(0, lastCarry);
+            [this._chunks[i], lastCarry] =
+                Chunk.subtract(this._chunks[i], 0, lastCarry);
             i++;
         }
 
-        while (this._repr[this._chunkCnt-1]._bits == 0) {
-            this._repr.pop();
-            this._chunkCnt--;
+        while (this._chunks[this._cntChunk-1] == 0) {
+            this._chunks.pop();
+            this._cntChunk--;
 
-            if (this._chunkCnt == 0) {
+            if (this._cntChunk == 0) {
                 break;
             }
         }
     }
 
     /* Stores product of n1, n2 in itself
-     * @n1: BigInteger The first number in the product
-     * @n2: BigInteger Second number in the product
+     * @n1: BigInt The first number in the product
+     * @n2: BigInt Second number in the product
      */
-    multiply(n1: BigInteger,
-             n2: BigInteger) {
+    multiply(n1: BigInt,
+             n2: BigInt) {
 
-        this._repr = [];
-        this._chunkCnt = 0;
+        this._chunks = [];
+        this._cntChunk = 0;
 
-        for (let i=0; i<n2._chunkCnt; i++) {
+        for (let i=0; i<n2._cntChunk; i++) {
 
-            let plier = n2._repr[i];
-            for (let j=0; j<n1._chunkCnt; j++) {
+            let plier = n2._chunks[i];
+            for (let j=0; j<n1._cntChunk; j++) {
                 let [res, rcar] =
-                    Chunk.multiply(n1._repr[j], plier);
+                    Chunk.multiply(n1._chunks[j], plier);
 
                 rcar += this._addToChunk(j+i, res, 0);
 
@@ -151,81 +155,82 @@ export class BigInteger {
         }
     }
 
-    static add(b1: BigInteger, b2: BigInteger): BigInteger {
-        let result = new BigInteger('0');
-        result.add(b1);
+    static add(b1: BigInt, b2: BigInt): BigInt {
+        let result = new BigInt(b1);
         result.add(b2);
         return result;
     }
 
-    static subtract(b1: BigInteger, b2: BigInteger): BigInteger {
-        let result = new BigInteger(b1);
+    static subtract(b1: BigInt, b2: BigInt): BigInt {
+        let result = new BigInt(b1);
         result.subtract(b2);
         return result;
     }
 
-    static powTen(count: number): Chunk[] {
-        return Array.apply(null, Array(count)).map(function(){return new Chunk('0')});
+    static powTen(count: number): number[] {
+        return Array.apply(null, Array(count)).map(function(){return 0});
     }
 
-    static slowmultiply(b1: BigInteger, b2: BigInteger): BigInteger {
-        let result = new BigInteger([0, []]);
+    static slowmultiply(b1: BigInt, b2: BigInt): BigInt {
+        let result = new BigInt([0, []]);
         result.multiply(b1, b2);
         return result;
     }
 
-    static karatsuba(num1: BigInteger, num2: BigInteger): BigInteger {
+    static karatsuba(num1: BigInt, num2: BigInt): BigInt {
         // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
 
-        if (num1._chunkCnt <= 30 || num2._chunkCnt <= 30) {
-            return (BigInteger.slowmultiply(num1, num2));
+        if (num1._cntChunk <= 30 || num2._cntChunk <= 30) {
+            return (BigInt.slowmultiply(num1, num2));
         }
 
-        let m = Math.round(Math.max(num1._chunkCnt, num2._chunkCnt)/2);
+        let m = Math.round(Math.max(num1._cntChunk, num2._cntChunk)/2);
 
-        let [h1, l1] = BigInteger.splitChunks(num1, m);
-        let [h2, l2] = BigInteger.splitChunks(num2, m);
+        let [h1, l1] = BigInt.splitChunks(num1, m);
+        let [h2, l2] = BigInt.splitChunks(num2, m);
 
-        let z0 = BigInteger.karatsuba(l1, l2);
-        let z1 = BigInteger.karatsuba(BigInteger.add(l1, h1), BigInteger.add(l2, h2));
-        let z2 = BigInteger.karatsuba(h1, h2);
+        let z0 = BigInt.karatsuba(l1, l2);
+        let z1 = BigInt.karatsuba(
+            BigInt.add(l1, h1), BigInt.add(l2, h2));
+        let z2 = BigInt.karatsuba(h1, h2);
 
         // (z2*10^(2*m2))+((z1-z2-z0)*10^(m2))+(z0)
-        return BigInteger.add(
+        return BigInt.add(
             z0,
-            BigInteger.add(
-                BigInteger.shiftChunks(z2, 2*m),
-                BigInteger.shiftChunks(BigInteger.subtract(z1, BigInteger.add(z2, z0)), m)
+            BigInt.add(
+                BigInt.shiftChunks(z2, 2*m),
+                BigInt.shiftChunks(
+                    BigInt.subtract(z1, BigInt.add(z2, z0)), m)
             )
         );
     }
 
-    static exponent(n: BigInteger, power: BigInteger): BigInteger {
+    static exponent(n: BigInt, power: BigInt): BigInt {
         if (power.toString() === '0') {
-            return new BigInteger('1');
+            return new BigInt(1);
         } else if (power.toString() === '1') {
-            return new BigInteger(n);
+            return new BigInt(n);
         } else if (power.toString() === '2') {
-            return BigInteger.karatsuba(n, n);
+            return BigInt.karatsuba(n, n);
         }
 
-        let b1 = BigInteger.exponent(n, BigInteger.halve(power));
-        let b2 = BigInteger.karatsuba(b1, b1);
+        let b1 = BigInt.exponent(n, BigInt.halve(power));
+        let b2 = BigInt.karatsuba(b1, b1);
 
-        if (BigInteger.mod2(power) == 1) {
-            return BigInteger.slowmultiply(b2, n);
+        if (BigInt.mod2(power) == 1) {
+            return BigInt.slowmultiply(b2, n);
         } else {
             return b2;
         }
     }
 
-    static halve(n: BigInteger) {
-        let result = new BigInteger([0, []]);
+    static halve(n: BigInt) {
+        let result = new BigInt([0, []]);
         let lastCarry = 0;
         let lastRes;
-        for (let i=n._chunkCnt-1; i>=0; i--) {
-            [lastRes, lastCarry] = Chunk.halve(n._repr[i], lastCarry);
-            if (lastRes == 0 && i == n._chunkCnt-1) {
+        for (let i=n._cntChunk-1; i>=0; i--) {
+            [lastRes, lastCarry] = Chunk.halve(n._chunks[i], lastCarry);
+            if (lastRes == 0 && i == n._cntChunk-1) {
                 continue;
             }
             result._addToChunk(i, lastRes, 0);
@@ -235,15 +240,15 @@ export class BigInteger {
 
     /* Takes two BigInts, and compares them.
      * Returns 1 if n1>n2, -1 if n2>n1, 0 if n1==n2
-     * @n1: BigInteger First number
-     * @n2: BigInteger Second number
+     * @n1: BigInt First number
+     * @n2: BigInt Second number
      */
-    static compare(n1: BigInteger, n2: BigInteger): number {
-        if (n1._chunkCnt > n2._chunkCnt) return 1;
-        else if (n1._chunkCnt < n2._chunkCnt) return -1;
+    static compare(n1: BigInt, n2: BigInt): number {
+        if (n1._cntChunk > n2._cntChunk) return 1;
+        else if (n1._cntChunk < n2._cntChunk) return -1;
 
-        for (let i=n1._chunkCnt-1; i>=0; i--) {
-            let res = Chunk.compare(n1._repr[i], n2._repr[i]);
+        for (let i=n1._cntChunk-1; i>=0; i--) {
+            let res = Chunk.compare(n1._chunks[i], n2._chunks[i]);
             if (res != 0) {
                 return res;
             }
@@ -251,31 +256,32 @@ export class BigInteger {
         return 0;
     }
 
-    static mod2(n: BigInteger): number {
-        if (n._chunkCnt == 0) {
-            throw new Error('Modulo of empty BigInteger');
+    static mod2(n: BigInt): number {
+        if (n._cntChunk == 0) {
+            throw new Error('Modulo of empty BigInt');
         }
-        return Math.floor(n._repr[0]._bits % 2);
+        return Math.floor(n._chunks[0] % 2);
     }
 
-    static splitChunks(item: BigInteger, countInOne: number): [BigInteger, BigInteger] {
-        if (countInOne >= item._chunkCnt) {
-            return [new BigInteger([item._chunkCnt, item._repr]),
-                    new BigInteger('0')];
+    static splitChunks(item: BigInt,
+                       countInOne: number): [BigInt, BigInt] {
+        if (countInOne >= item._cntChunk) {
+            return [new BigInt([item._cntChunk, item._chunks]),
+                    new BigInt('0')];
         }
 
-        let h = new BigInteger([item._chunkCnt - countInOne,
-                                item._repr.slice(countInOne)]);
-        let l = new BigInteger([countInOne,
-                                item._repr.slice(0, countInOne)]);
+        let h = new BigInt([item._cntChunk - countInOne,
+                                item._chunks.slice(countInOne)]);
+        let l = new BigInt([countInOne,
+                                item._chunks.slice(0, countInOne)]);
 
         return [h, l];
     }
 
-    static shiftChunks(item: BigInteger, count: number) {
-        let result = new BigInteger(item);
-        result._repr = BigInteger.powTen(count).concat(item._repr);
-        result._chunkCnt += count;
+    static shiftChunks(item: BigInt, count: number) {
+        let result = new BigInt(item);
+        result._chunks = BigInt.powTen(count).concat(item._chunks);
+        result._cntChunk += count;
         return result;
     }
 }

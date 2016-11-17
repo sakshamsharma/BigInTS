@@ -7,13 +7,13 @@ The code is well typed, and small (4KB without minification). There is some majo
 
 ### Currently implemented functionality:
 
-* `BigInteger.add(num1, num2)`
-* `BigInteger.subtract(num1, num2)`[1]
-* `BigInteger.slowmultiply(num1, num2)`
-* `BigInteger.karatsuba(num1, num2)`[2]
-* `BigInteger.exponent(num1, num2)`
-* `BigInteger.compare(num1, num2)`
-* `BigInteger.mod2(num)`
+* `BigInt.add(num1, num2)`
+* `BigInt.subtract(num1, num2)`[1]
+* `BigInt.slowmultiply(num1, num2)`
+* `BigInt.karatsuba(num1, num2)`[2]
+* `BigInt.exponent(num1, num2)`
+* `BigInt.compare(num1, num2)`
+* `BigInt.mod2(num)`
 
 ### Notes:
 * [1]: Subtraction does not work for negative results yet
@@ -23,7 +23,7 @@ The code is well typed, and small (4KB without minification). There is some majo
 The performance is *bearable* (well, not). Python, of course, works much faster. But regardless, the test used is:
 
 ```
-BigInteger.exponent(new BigInteger('19956534'), new BigInteger('10101'));
+BigInt.exponent(new BigInt('19956534'), new BigInt('10101'));
 ```
 
 Time taken:

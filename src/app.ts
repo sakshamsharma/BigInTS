@@ -1,2 +1,2 @@
-import {BigInteger} from './bigint';
-BigInteger.exponent( new BigInteger('19956534'), new BigInteger('10101')).toString();
+import {BigInt} from './bigint';
+console.log(BigInt.exponent( new BigInt('19956534'), new BigInt('10101')).toString());
