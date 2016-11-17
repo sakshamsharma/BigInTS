@@ -15,3 +15,8 @@ export function reverseStr(str: string) {
 }
 
 export function sign(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
+
+export function padZeroes(num, digits) {
+    return Array(Math.max(digits - String(num).length + 1, 0)).join('0') +
+        String(num);
+}

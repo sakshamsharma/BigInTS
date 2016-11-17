@@ -1,4 +1,4 @@
-import {sign} from './utils';
+import {sign, padZeroes} from './utils';
 
 export class Chunk {
     static size: number = 7;
@@ -52,6 +52,6 @@ export class Chunk {
     }
 
     toString(): string {
-        return this._bits.toString();
+        return padZeroes(this._bits, Chunk.size);
     }
 }

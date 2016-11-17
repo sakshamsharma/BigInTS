@@ -2,18 +2,19 @@ import * as Utils from './utils';
 import {Chunk} from './chunk';
 
 /* Provides common big integer functions for use in JS
- * @val: string | number Requires a number or a string
- *                       to initialize the integer
+ * @val: string | number | BigInteger | [number, Chunk[]]
+ * Requires a number, string, BigInteger, or a list of chunks
+ * to initialize the integer
  */
 export class BigInteger {
     _repr: Chunk[];
     _chunkCnt: number;
 
-    constructor (val: string | number) {
+    constructor (val: string | number | BigInteger | [number, Chunk[]]) {
         this._repr = [];
         this._chunkCnt = 0;
 
-        if (Utils.isNumber(val) || Utils.isString(val)) {
+        if ((Utils.isNumber(val) || Utils.isString(val))) {
             // Create a new bigint from this
 
             let strVal: string;
@@ -29,6 +30,12 @@ export class BigInteger {
                     (strVal.substr(i, Chunk.size)).split('').reverse().join(''));
             }
 
+        } else if (val instanceof BigInteger) {
+            this._repr = val._repr.slice(); // Copy it, not refer
+            this._chunkCnt = val._chunkCnt;
+        } else if (val instanceof Array) {
+            this._repr = val[1].slice();
+            this._chunkCnt = val[0];
         } else {
             throw new TypeError('Bad type for BigInteger constructor');
         }
@@ -38,7 +45,11 @@ export class BigInteger {
      * @delimiter: string? Optional delimiter to print between chunks
      */
     toString(delimiter: string = ''): string {
-        let retval = this._repr.reverse().map(x => x.toString()).join(delimiter);
+        let retval = this._repr.reverse().
+            map(x => x.toString()).join(delimiter).replace(/^0+/, '');;
+        if (retval == '') {
+            retval = '0';
+        }
         this._repr.reverse();
         return retval;
     }
