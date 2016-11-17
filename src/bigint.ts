@@ -77,27 +77,6 @@ export class BigInteger {
         return this._repr[index].add(value, carry)
     }
 
-    splitChunks(countInOne: number): [BigInteger, BigInteger] {
-        if (countInOne >= this._chunkCnt) {
-            return [new BigInteger([this._chunkCnt, this._repr]),
-                    new BigInteger('0')];
-        }
-
-        let h = new BigInteger([this._chunkCnt - countInOne,
-                                this._repr.slice(countInOne)]);
-        let l = new BigInteger([countInOne,
-                                this._repr.slice(0, countInOne)]);
-
-        return [h, l];
-    }
-
-    shiftChunks(count: number) {
-        let result = new BigInteger(this);
-        result._repr = BigInteger.powTen(count).concat(this._repr);
-        result._chunkCnt += count;
-        return result;
-    }
-
     /* Adds a big integer to this integer
      * @b2: BigInteger The number to be added to this
      */
@@ -114,6 +93,10 @@ export class BigInteger {
         }
     }
 
+    /* Subtracts a big integer from this integer
+     * NOTE: Does not handle cases where result is negative
+     * @b2: BigInteger The number to be subtracted
+     */
     subtract(b2: BigInteger) {
         if (BigInteger.compare(this, b2) == -1) {
             throw new Error('Subtract big from small not implemented');
@@ -138,19 +121,6 @@ export class BigInteger {
                 break;
             }
         }
-    }
-
-    static add(b1: BigInteger, b2: BigInteger): BigInteger {
-        let result = new BigInteger('0');
-        result.add(b1);
-        result.add(b2);
-        return result;
-    }
-
-    static subtract(b1: BigInteger, b2: BigInteger): BigInteger {
-        let result = new BigInteger(b1);
-        result.subtract(b2);
-        return result;
     }
 
     /* Stores product of n1, n2 in itself
@@ -181,6 +151,23 @@ export class BigInteger {
         }
     }
 
+    static add(b1: BigInteger, b2: BigInteger): BigInteger {
+        let result = new BigInteger('0');
+        result.add(b1);
+        result.add(b2);
+        return result;
+    }
+
+    static subtract(b1: BigInteger, b2: BigInteger): BigInteger {
+        let result = new BigInteger(b1);
+        result.subtract(b2);
+        return result;
+    }
+
+    static powTen(count: number): Chunk[] {
+        return Array.apply(null, Array(count)).map(function(){return new Chunk('0')});
+    }
+
     static multiply(b1: BigInteger, b2: BigInteger): BigInteger {
         let result = new BigInteger([0, []]);
         result.multiply(b1, b2);
@@ -196,8 +183,8 @@ export class BigInteger {
 
         let m = Math.round(Math.max(num1._chunkCnt, num2._chunkCnt)/2);
 
-        let [h1, l1] = num1.splitChunks(m);
-        let [h2, l2] = num2.splitChunks(m);
+        let [h1, l1] = BigInteger.splitChunks(num1, m);
+        let [h2, l2] = BigInteger.splitChunks(num2, m);
 
         let z0 = BigInteger.karatsuba(l1, l2);
         let z1 = BigInteger.karatsuba(BigInteger.add(l1, h1), BigInteger.add(l2, h2));
@@ -207,14 +194,10 @@ export class BigInteger {
         return BigInteger.add(
             z0,
             BigInteger.add(
-                z2.shiftChunks(2*m),
-                BigInteger.subtract(z1, BigInteger.add(z2, z0)).shiftChunks(m)
+                BigInteger.shiftChunks(z2, 2*m),
+                BigInteger.shiftChunks(BigInteger.subtract(z1, BigInteger.add(z2, z0)), m)
             )
         );
-    }
-
-    static powTen(count: number): Chunk[] {
-        return Array.apply(null, Array(count)).map(function(){return new Chunk('0')});
     }
 
     static exponent(n: BigInteger, power: BigInteger): BigInteger {
@@ -273,5 +256,26 @@ export class BigInteger {
             throw new Error('Modulo of empty BigInteger');
         }
         return Math.floor(n._repr[0]._bits % 2);
+    }
+
+    static splitChunks(item: BigInteger, countInOne: number): [BigInteger, BigInteger] {
+        if (countInOne >= item._chunkCnt) {
+            return [new BigInteger([item._chunkCnt, item._repr]),
+                    new BigInteger('0')];
+        }
+
+        let h = new BigInteger([item._chunkCnt - countInOne,
+                                item._repr.slice(countInOne)]);
+        let l = new BigInteger([countInOne,
+                                item._repr.slice(0, countInOne)]);
+
+        return [h, l];
+    }
+
+    static shiftChunks(item: BigInteger, count: number) {
+        let result = new BigInteger(item);
+        result._repr = BigInteger.powTen(count).concat(item._repr);
+        result._chunkCnt += count;
+        return result;
     }
 }
