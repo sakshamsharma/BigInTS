@@ -116,8 +116,8 @@ export class BigInteger {
         let i = 0;
         for (i=0; i<b2._chunkCnt; i++) {
             lastCarry = this._repr[i].subtract(b2._repr[i]._bits, lastCarry);
-
         }
+
         while (lastCarry != 0) {
             lastCarry = this._repr[i].subtract(0, lastCarry);
             i++;
@@ -180,15 +180,10 @@ export class BigInteger {
         return result;
     }
 
-    static cnt = 0;
-
     static karatsuba(num1: BigInteger, num2: BigInteger): BigInteger {
         // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
 
-        let kk = BigInteger.cnt;
-        BigInteger.cnt ++;
-
-        if (num1._chunkCnt <= 500 || num2._chunkCnt <= 500) {
+        if (num1._chunkCnt <= 1000 || num2._chunkCnt <= 1000) {
             return (BigInteger.multiply(num1, num2));
         }
 
@@ -198,25 +193,18 @@ export class BigInteger {
         let [h2, l2] = num2.splitChunks(m);
 
         let z0 = BigInteger.karatsuba(l1, l2);
-        let z1 = BigInteger.karatsuba(
-            BigInteger.add(l1, h1), BigInteger.add(l2, h2));
+        let z1 = BigInteger.karatsuba(BigInteger.add(l1, h1), BigInteger.add(l2, h2));
         let z2 = BigInteger.karatsuba(h1, h2);
+
+        let tenToM = BigInteger.exponent(new BigInteger(Chunk.max), new BigInteger(m));
+        let tenToTwoM = BigInteger.exponent(tenToM, new BigInteger('2'));
 
         // (z2*10^(2*m2))+((z1-z2-z0)*10^(m2))+(z0)
         return BigInteger.add(
             z0,
             BigInteger.add(
-
-                BigInteger.multiply(
-                    z2,
-                    BigInteger.exponent(new BigInteger(Chunk.max),
-                                        new BigInteger(2*m))),
-
-                BigInteger.multiply(
-                    BigInteger.subtract(z1, BigInteger.add(z2, z0)),
-                    BigInteger.exponent(new BigInteger(Chunk.max),
-                                        new BigInteger(m))
-                )
+                BigInteger.multiply(z2, tenToTwoM),
+                BigInteger.multiply(BigInteger.subtract(z1, BigInteger.add(z2, z0)), tenToM)
             )
         );
     }
