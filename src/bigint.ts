@@ -76,6 +76,20 @@ export class BigInteger {
         return this._repr[index].add(value, carry)
     }
 
+    splitChunks(countInOne: number): [BigInteger, BigInteger] {
+        if (countInOne >= this._chunkCnt) {
+            return [new BigInteger([this._chunkCnt, this._repr]),
+                    new BigInteger('0')];
+        }
+
+        let h = new BigInteger([countInOne,
+                                this._repr.slice(0, countInOne)]);
+        let l = new BigInteger([this._chunkCnt - countInOne,
+                                this._repr.slice(countInOne)]);
+
+        return [h, l];
+    }
+
     /* Adds a big integer to this integer
      * @b2: BigInteger The number to be added to this
      */
@@ -92,9 +106,19 @@ export class BigInteger {
         }
     }
 
+    subtract(b2: BigInteger) {
+        console.error('Subtract not yet implemented');
+    }
+
     static add(b1: BigInteger, b2: BigInteger): BigInteger {
         let result = new BigInteger(b1);
         result.add(b2);
+        return result;
+    }
+
+    static subtract(b1: BigInteger, b2: BigInteger): BigInteger {
+        let result = new BigInteger(b1);
+        result.subtract(b2);
         return result;
     }
 
@@ -132,6 +156,42 @@ export class BigInteger {
         return result;
     }
 
+    static karatsuba(num1: BigInteger, num2: BigInteger): BigInteger {
+        // From: https://en.wikipedia.org/wiki/Karatsuba_algorithm
+
+        if (num1._chunkCnt <= 2 || num2._chunkCnt <= 2) {
+            return (BigInteger.multiply(num1, num2));
+        }
+
+        let m = Math.round(Math.max(num1._chunkCnt, num2._chunkCnt)/2);
+
+        let [h1, l1] = num1.splitChunks(m);
+        let [h2, l2] = num2.splitChunks(m);
+
+        let z0 = BigInteger.karatsuba(l1, l2);
+        let z1 = BigInteger.karatsuba(
+            BigInteger.add(l1, h1), BigInteger.add(l2, h2));
+        let z2 = BigInteger.karatsuba(h1, h2);
+
+        // (z2*10^(2*m2))+((z1-z2-z0)*10^(m2))+(z0)
+        return BigInteger.add(
+            z0,
+            BigInteger.add(
+
+                BigInteger.multiply(
+                    z2,
+                    BigInteger.exponent(new BigInteger(Chunk.max),
+                                        new BigInteger(2*m))),
+
+                BigInteger.multiply(
+                    BigInteger.subtract(z1, BigInteger.add(z2, z0)),
+                    BigInteger.exponent(new BigInteger(Chunk.max),
+                                        new BigInteger(m))
+                )
+            )
+        );
+    }
+
     static exponent(n: BigInteger, power: BigInteger): BigInteger {
         if (power.toString() === '0') {
             return new BigInteger('1');
@@ -141,16 +201,13 @@ export class BigInteger {
             return BigInteger.multiply(n, n);
         }
 
-        let toRaise = BigInteger.halve(power);
-        let b1 = BigInteger.exponent(n, toRaise);
-
-        let result = BigInteger.multiply(b1, b1);
+        let b1 = BigInteger.exponent(n, BigInteger.halve(power));
 
         if (BigInteger.mod2(power) == 1) {
-            result = BigInteger.multiply(result, n);
+            return BigInteger.multiply(b1, BigInteger.multiply(b1, n));
+        } else {
+            return BigInteger.multiply(b1, b1);
         }
-
-        return result;
     }
 
     static halve(n: BigInteger) {
