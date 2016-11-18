@@ -156,9 +156,9 @@ export class BigInt {
         return result;
     }
 
-    static slowmultiply(b1: BigInt, b2: BigInt): BigInt {
-        let result = new BigInt([0, []]);
-        result.multiply(b1, b2);
+    static slowmultiply(n1: BigInt, n2: BigInt): BigInt {
+        let result = new BigInt(0);
+        result.multiply(n1, n2);
         return result;
     }
 

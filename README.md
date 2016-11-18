@@ -28,9 +28,13 @@ BigInt.exponent(new BigInt('19956534'), new BigInt('10101'));
 
 Time taken:
 * Python: Less than a microsecond
+* [big-integer](https://www.npmjs.com/package/big-integer): Approx 500ms
+* [jsbn](https://github.com/jasondavies/jsbn): Approx 170ms
 * BigInTS: Approx 1000ms
 
-Expect comparisions with other JS libraries in the near future.
+Considering this is within 1 day of starting the code, seems good enough. It should be interesting to rewrite this in ASM.js using emscripten, that'll be done soon too.
+_
+Expect many performance boosts, and comparisions with other JS libraries in the near future.
 
 ### TODO
 * modulo
