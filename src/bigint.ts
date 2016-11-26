@@ -14,7 +14,7 @@ export class BigInt {
         this._chunks = [];
         this._cntChunk = 0;
 
-        if (Utils.isString(val)) {
+        if (typeof val === "string") {
             // Create a new bigint from this
 
             let strVal = Utils.reverseStr(val);
@@ -25,7 +25,7 @@ export class BigInt {
                     (strVal.substr(i, Chunk.size)).split('').reverse().join('')));
                 this._cntChunk += 1;
             }
-        } else if (Utils.isNumber(val)) {
+        } else if (typeof val === "number") {
             if (val < Chunk.max) {
                 this._cntChunk = 1;
                 this._chunks = [val];
@@ -72,12 +72,12 @@ export class BigInt {
      * @b2: BigInt The number to be added to this
      */
     add(b2: BigInt) {
-        let lastCarry = 0;
-        for (let i=0; i<b2._cntChunk; i++) {
-            lastCarry = this._addToChunk(i, b2._chunks[i], lastCarry);
+        let lastCarry = 0, addingTo = 0;
+        for (addingTo=0; addingTo<b2._cntChunk; addingTo++) {
+            lastCarry =
+                this._addToChunk(addingTo, b2._chunks[addingTo], lastCarry);
         }
 
-        let addingTo = b2._cntChunk;
         while (lastCarry !== 0) {
             lastCarry = this._addToChunk(addingTo, 0, lastCarry);
             addingTo++;
@@ -93,8 +93,7 @@ export class BigInt {
             throw new Error('Subtract big from small not implemented');
         }
 
-        let lastCarry = 0;
-        let i = 0;
+        let lastCarry = 0, i=0;
         for (i=0; i<b2._cntChunk; i++) {
             [this._chunks[i], lastCarry] =
                 Chunk.subtract(this._chunks[i], b2._chunks[i], lastCarry);
@@ -120,22 +119,23 @@ export class BigInt {
      * @n1: BigInt The first number in the product
      * @n2: BigInt Second number in the product
      */
-    multiply(n1: BigInt,
-             n2: BigInt) {
+    multiply(n1: BigInt, n2: BigInt) {
 
         this._chunks = [];
         this._cntChunk = 0;
 
-        for (let i=0; i<n2._cntChunk; i++) {
+        let res, rcar, addingTo: number;
+        let i, j: number;
 
-            let plier = n2._chunks[i];
-            for (let j=0; j<n1._cntChunk; j++) {
-                let [res, rcar] =
-                    Chunk.multiply(n1._chunks[j], plier);
+        for (i=0; i<n2._cntChunk; i++) {
+
+            for (j=0; j<n1._cntChunk; j++) {
+                [res, rcar] =
+                    Chunk.multiply(n1._chunks[j], n2._chunks[i]);
 
                 rcar += this._addToChunk(j+i, res, 0);
 
-                let addingTo = j+i+1;
+                addingTo = j+i+1;
                 while (rcar !== 0) {
                     rcar = this._addToChunk(addingTo, 0, rcar);
                     addingTo++
@@ -211,8 +211,7 @@ export class BigInt {
 
     static halve(n: BigInt) {
         let result = new BigInt([0, []]);
-        let lastCarry = 0;
-        let lastRes;
+        let lastCarry = 0, lastRes: number;
         for (let i=n._cntChunk-1; i>=0; i--) {
             [lastRes, lastCarry] = Chunk.halve(n._chunks[i], lastCarry);
             if (lastRes == 0 && i == n._cntChunk-1) {
@@ -232,8 +231,9 @@ export class BigInt {
         if (n1._cntChunk > n2._cntChunk) return 1;
         else if (n1._cntChunk < n2._cntChunk) return -1;
 
-        for (let i=n1._cntChunk-1; i>=0; i--) {
-            let res = Chunk.compare(n1._chunks[i], n2._chunks[i]);
+        let i, res: number;
+        for (i=n1._cntChunk-1; i>=0; i--) {
+            res = Chunk.compare(n1._chunks[i], n2._chunks[i]);
             if (res != 0) {
                 return res;
             }
