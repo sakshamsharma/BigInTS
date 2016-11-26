@@ -56,7 +56,9 @@ export class BigInt {
         return retval;
     }
 
-    private _addToChunk(index: number, value: number, carry: number) {
+    _addToChunk(index: number, value: number, carry: number) {
+        // index is 0-indexed
+        // cntchunk is 1-indexed
         while (index >= this._cntChunk) {
             this._chunks.push(0);
             this._cntChunk += 1;
@@ -68,11 +70,21 @@ export class BigInt {
         return rcar;
     }
 
+    needChunks(count: number) {
+        while (count > this._cntChunk) {
+            this._chunks.push(0);
+            this._cntChunk += 1;
+        }
+    }
+
     /* Adds a big integer to this integer
      * @b2: BigInt The number to be added to this
      */
     add(b2: BigInt) {
         let lastCarry = 0, addingTo = 0;
+
+        this.needChunks(b2._cntChunk);
+
         for (addingTo=0; addingTo<b2._cntChunk; addingTo++) {
             lastCarry =
                 this._addToChunk(addingTo, b2._chunks[addingTo], lastCarry);
@@ -126,6 +138,8 @@ export class BigInt {
 
         let res, rcar, addingTo: number;
         let i, j: number;
+
+        this.needChunks(n1._cntChunk + n2._cntChunk - 1);
 
         for (i=0; i<n2._cntChunk; i++) {
 
@@ -252,7 +266,7 @@ export class BigInt {
                        countInOne: number): [BigInt, BigInt] {
         if (countInOne >= item._cntChunk) {
             return [new BigInt([item._cntChunk, item._chunks]),
-                    new BigInt('0')];
+                    new BigInt(0)];
         }
 
         let h = new BigInt([item._cntChunk - countInOne,
