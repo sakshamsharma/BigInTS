@@ -32,9 +32,7 @@ Time taken:
 * [jsbn](https://github.com/jasondavies/jsbn): Approx 170ms
 * BigInTS: Approx 1000ms
 
-Considering this is within 1 day of starting the code, seems good enough. It should be interesting to rewrite this in ASM.js using emscripten, that'll be done soon too.
-_
-Expect many performance boosts, and comparisions with other JS libraries in the near future.
+Considering this is within 1 day of starting the code, seems good enough. It should be interesting to rewrite this in ASM.js using emscripten.
 
 ### TODO
 * modulo
